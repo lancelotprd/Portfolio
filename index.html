@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lancelot Cavalec | Portfolio</title>
+    
+    <!-- Scripts CDN pour React, Framer Motion (Motion) et Tailwind -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@11.0.25/dist/framer-motion.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            color: white;
+        }
+
+        /* Masquage de la scrollbar pour une immersion totale */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        .outline-text {
+            -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+            color: transparent;
+        }
+
+        /* Styles pour les éléments de chargement */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(34, 211, 238, 0.2);
+            border-top-color: #22d3ee;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        // Correction importante : Utilisation de "Motion" au lieu de "FramerMotion" pour la v11 CDN
+        const { motion, AnimatePresence, useScroll, useSpring } = Motion;
+
+        // --- Composants d'icônes SVG (remplacement de Lucide pour une fiabilité maximale en fichier seul) ---
+        const IconMail = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
+        const IconInstagram = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>;
+        const IconYoutube = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 2-2 103.03 103.03 0 0 1 15 0 2 2 0 0 1 2 2 24.12 24.12 0 0 1 0 10 2 2 0 0 1-2 2 103.03 103.03 0 0 1-15 0 2 2 0 0 1-2-2z"/><path d="m10 15 5-3-5-3z"/></svg>;
+        const IconPlay = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide"><polygon points="5 3 19 12 5 21 5 3"/></svg>;
+        const IconAlert = () => <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+
+        // --- Composant Vidéo Scroll Background Robuste ---
+        const VideoScrollBackground = () => {
+            const videoRef = useRef(null);
+            const { scrollYProgress } = useScroll();
+            
+            const smoothProgress = useSpring(scrollYProgress, { 
+                stiffness: 200, 
+                damping: 40,
+                restDelta: 0.001 
+            });
+            
+            const [status, setStatus] = useState('loading');
+
+            useEffect(() => {
+                const video = videoRef.current;
+                if (!video) return;
+
+                const unsubscribe = smoothProgress.on("change", (v) => {
+                    if (video.duration && video.readyState >= 2) {
+                        video.currentTime = v * video.duration;
+                    }
+                });
+
+                const initVideo = () => {
+                    video.play().then(() => {
+                        video.pause();
+                        setStatus('ready');
+                    }).catch(err => {
+                        console.log("Autoplay bloqué, passage en manuel");
+                        setStatus('ready');
+                    });
+                };
+
+                video.addEventListener('loadedmetadata', initVideo);
+                video.addEventListener('error', () => setStatus('error'));
+
+                return () => {
+                    unsubscribe();
+                    video.removeEventListener('loadedmetadata', initVideo);
+                };
+            }, [smoothProgress]);
+
+            // Lien direct Master Dropbox
+            const dropboxUrl = "https://dl.dropboxusercontent.com/s/wx7k14wrx8hb6b3q0vgs5/3D_Drone_Animation_gzR_53Lh.mp4";
+
+            return (
+                <div className="fixed inset-0 z-0 bg-black pointer-events-none overflow-hidden">
+                    <div className="absolute inset-0 bg-black/50 z-10" />
+                    
+                    <video
+                        ref={videoRef}
+                        muted
+                        playsInline
+                        preload="auto"
+                        className={`w-full h-full object-cover transition-opacity duration-1000 ${status === 'ready' ? 'opacity-80' : 'opacity-0'}`}
+                        style={{ filter: 'contrast(1.1) brightness(0.8)' }}
+                    >
+                        <source src={dropboxUrl} type="video/mp4" />
+                    </video>
+
+                    {status === 'loading' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black">
+                            <div className="spinner mb-4"></div>
+                            <span className="text-[10px] font-mono uppercase tracking-[0.5em] text-gray-500 italic">Initialisation Master 4K...</span>
+                        </div>
+                    )}
+
+                    {status === 'error' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/90 px-10 text-center">
+                            <IconAlert />
+                            <h3 className="text-white font-black uppercase tracking-tighter text-xl mt-4 mb-2">Lien Dropbox Inaccessible (403)</h3>
+                            <p className="text-gray-400 text-xs uppercase tracking-widest leading-relaxed max-w-md mx-auto">
+                                Votre fichier Dropbox n'est pas partagé publiquement. <br/>
+                                Allez dans Dropbox &gt; Partager &gt; "Toute personne disposant du lien peut consulter".
+                            </p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- Curseur ---
+        const CustomCursor = () => {
+            const [position, setPosition] = useState({ x: 0, y: 0 });
+            useEffect(() => {
+                const updatePosition = (e) => setPosition({ x: e.clientX, y: e.clientY });
+                window.addEventListener('mousemove', updatePosition);
+                return () => window.removeEventListener('mousemove', updatePosition);
+            }, []);
+            return (
+                <motion.div 
+                    className="fixed top-0 left-0 w-8 h-8 border border-cyan-400 z-[9999] pointer-events-none hidden lg:flex items-center justify-center"
+                    animate={{ x: position.x - 16, y: position.y - 16 }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.5 }}
+                >
+                    <div className="w-1 h-1 bg-blue-500 rounded-full shadow-[0_0_12px_#3b82f6]" />
+                </motion.div>
+            );
+        };
+
+        function App() {
+            const { scrollYProgress } = useScroll();
+            const scaleProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+            const works = [
+                { title: "Séquence Poursuite", client: "Automobile", img: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800" },
+                { title: "L'Art du Design", client: "Luxury Home", img: "https://images.unsplash.com/photo-1600585154340-be6199f7d200?auto=format&fit=crop&q=80&w=800" },
+                { title: "Horizon Brut", client: "Documentaire", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800" },
+                { title: "Urban Flow", client: "Lifestyle", img: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800" },
+            ];
+
+            return (
+                <div className="bg-black text-white min-h-screen font-sans selection:bg-cyan-500 selection:text-black overflow-x-hidden">
+                    <CustomCursor />
+                    <VideoScrollBackground />
+
+                    <motion.div 
+                        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 z-[100] origin-left shadow-[0_0_15px_rgba(34,211,238,0.4)]"
+                        style={{ scaleX: scaleProgress }}
+                    />
+
+                    <nav className="fixed top-0 w-full z-[60] px-8 py-6 flex justify-between items-center backdrop-blur-md bg-black/30 border-b border-white/5">
+                        <div className="text-2xl font-black tracking-tighter uppercase">
+                            LANCELOT<span className="text-cyan-400 ml-1">Cavalec</span>
+                        </div>
+                        <div className="hidden md:flex gap-10 text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400">
+                           {['Vision', 'Showreel', 'Projets', 'Contact'].map(item => (
+                             <span key={item} className="cursor-default hover:text-white transition-colors uppercase">{item}</span>
+                           ))}
+                        </div>
+                    </nav>
+
+                    {/* Hero Section */}
+                    <section className="relative min-h-screen flex flex-col items-center justify-center pt-40 pb-24 bg-transparent text-center px-4">
+                        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+                            <h1 className="text-6xl md:text-8xl lg:text-[10rem] font-black mb-10 tracking-tighter uppercase leading-[0.85] bg-clip-text text-transparent bg-gradient-to-t from-blue-700 via-blue-500 to-cyan-400">
+                                <span className="flex flex-col sm:flex-row gap-x-6 items-center justify-center">
+                                    <span>PUSH</span><span>THE</span>
+                                </span>
+                                <span className="italic">LIMITS</span>
+                            </h1>
+                            <p className="max-w-2xl mx-auto text-gray-300 text-lg md:text-xl mb-14 font-light leading-relaxed italic">
+                                L'excellence visuelle au service de l'émotion. <br /> Des plans impossibles, une maîtrise technique absolue.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                                <div className="px-14 py-5 border border-cyan-400 text-cyan-400 font-black uppercase tracking-widest text-xs flex items-center gap-3 cursor-pointer hover:bg-cyan-400 hover:text-black transition-all">
+                                    <IconPlay size={16} /> Lancer le Showreel
+                                </div>
+                                <div className="px-14 py-5 border border-white/20 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 cursor-pointer hover:bg-white hover:text-black transition-all">
+                                    <IconMail /> Me contacter
+                                </div>
+                            </div>
+                        </motion.div>
+                    </section>
+
+                    {/* Showreel Section */}
+                    <section className="py-32 px-6 md:px-20 bg-black/40 backdrop-blur-md border-y border-white/5 relative z-10">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="flex flex-col md:flex-row justify-between items-baseline mb-16 border-b border-white/10 pb-8">
+                                <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter">SHOW<span className="text-blue-500">REEL</span></h2>
+                                <div className="text-gray-500 font-mono text-sm uppercase mt-4">Selection 2024 / 001</div>
+                            </div>
+                            <div className="group relative aspect-video w-full rounded-sm overflow-hidden border border-white/5 shadow-2xl bg-zinc-900 cursor-pointer">
+                                <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=1200" alt="Preview" className="w-full h-full object-cover opacity-50 transition-opacity group-hover:opacity-70" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-transparent transition-all">
+                                    <IconPlay size={48} />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Projets Section */}
+                    <section className="py-40 bg-black/40 px-6 md:px-20 border-t border-white/5 backdrop-blur-sm relative z-10">
+                        <div className="max-w-7xl mx-auto mb-16 text-center md:text-left">
+                            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter uppercase italic">PROJETS</h2>
+                        </div>
+                        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-px bg-white/10 shadow-2xl">
+                            {works.map((work, i) => (
+                                <div key={i} className="relative aspect-square group bg-black overflow-hidden border border-white/5">
+                                    <img src={work.img} alt={work.title} className="w-full h-full object-cover opacity-30 group-hover:opacity-100 transition-all duration-1000" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-12 flex flex-col justify-end translate-y-6 group-hover:translate-y-0 transition-all duration-500">
+                                        <span className="text-cyan-400 font-mono text-[10px] uppercase tracking-widest mb-3 font-bold">{work.client}</span>
+                                        <h4 className="text-4xl font-black uppercase tracking-tighter leading-none">{work.title}</h4>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Contact Section */}
+                    <section className="py-40 px-6 md:px-20 bg-zinc-950/80 backdrop-blur-lg relative z-10 border-t border-white/5">
+                        <div className="max-w-5xl mx-auto text-center px-6">
+                           <h2 className="text-6xl md:text-9xl font-black uppercase tracking-tighter mb-16 italic leading-none uppercase">CRÉONS <br /> <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-400">L'IMAGE.</span></h2>
+                           <div className="flex justify-center gap-12 mt-12">
+                              <div className="text-gray-500 hover:text-cyan-400 transition-colors cursor-pointer"><IconInstagram /></div>
+                              <div className="text-gray-500 hover:text-red-500 transition-colors cursor-pointer"><IconYoutube /></div>
+                              <div className="text-gray-500 hover:text-white transition-colors cursor-pointer"><IconMail /></div>
+                           </div>
+                           <p className="mt-24 text-[10px] font-mono text-gray-700 uppercase tracking-[0.5em]">
+                              © 2024 — Studio L.C / Lancelot Cavalec
+                           </p>
+                        </div>
+                    </section>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
