@@ -1,0 +1,398 @@
+html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lancelot Cavalec | Portfolio Cinématographique</title>
+    
+    <!-- Scripts CDN - Ordre de chargement optimisé -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Framer Motion v11 UMD (exporte l'objet global "Motion") -->
+    <script src="https://unpkg.com/framer-motion@11.0.25/dist/framer-motion.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        
+        /* Activation du défilement fluide pour toute la page */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            color: white;
+        }
+
+        /* Masquage de la scrollbar pour l'immersion */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        .outline-text {
+            -webkit-text-stroke: 1px rgba(255,255,255,0.2);
+            color: transparent;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(34, 211, 238, 0.2);
+            border-top-color: #22d3ee;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence, useScroll, useSpring, useMotionValueEvent } = Motion;
+
+        // --- Icônes SVG ---
+        const Instagram = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>;
+        const Youtube = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 2-2 103.03 103.03 0 0 1 15 0 2 2 0 0 1 2 2 24.12 24.12 0 0 1 0 10 2 2 0 0 1-2 2 103.03 103.03 0 0 1-15 0 2 2 0 0 1-2-2z"/><path d="m10 15 5-3-5-3z"/></svg>;
+        const Linkedin = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>;
+        const PlayCircle = ({ size = 24 }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>;
+        const Loader2 = ({ className }) => <div className={`spinner ${className}`} />;
+        const AlertTriangle = () => <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+        const ArrowLeft = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>;
+
+        // --- Données des Projets ---
+        const projectsData = [
+            { 
+                id: 1, 
+                title: "Séquence Poursuite", 
+                client: "Automobile", 
+                img: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800",
+                description: "Capture haute vitesse en FPV pour une marque de luxe. L'enjeu était de maintenir une proximité constante avec le véhicule à plus de 100km/h tout en gérant les variations de lumière en forêt.",
+                visuals: [
+                    { type: 'image', url: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&q=80&w=1200" },
+                    { type: 'video', url: "https://assets.mixkit.co/videos/preview/mixkit-car-driving-on-a-mountain-road-4146-large.mp4" },
+                    { type: 'image', url: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=1200" }
+                ]
+            },
+            { 
+                id: 2, 
+                title: "L'Art du Design", 
+                client: "Luxury Home", 
+                img: "https://images.unsplash.com/photo-1600585154340-be6199f7d200?auto=format&fit=crop&q=80&w=800",
+                description: "Mise en avant d'une villa d'architecte. Des plans lents et stabilisés pour souligner les lignes géométriques et l'intégration paysagère.",
+                visuals: [
+                    { type: 'image', url: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&q=80&w=1200" },
+                    { type: 'image', url: "https://images.unsplash.com/photo-1600585154526-990dcea4db0d?auto=format&fit=crop&q=80&w=1200" }
+                ]
+            },
+            { 
+                id: 3, 
+                title: "Horizon Brut", 
+                client: "Documentaire", 
+                img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800",
+                description: "Projet de conservation naturelle. Captures cinématiques des sommets alpins pour sensibiliser à la beauté des glaciers en recul.",
+                visuals: [
+                    { type: 'image', url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=1200" },
+                    { type: 'video', url: "https://assets.mixkit.co/videos/preview/mixkit-drone-view-of-a-landscape-with-a-river-and-trees-4148-large.mp4" }
+                ]
+            },
+            { 
+                id: 4, 
+                title: "Urban Flow", 
+                client: "Lifestyle", 
+                img: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&q=80&w=800",
+                description: "L'énergie de la ville capturée de nuit. Jeux de lumière et mouvements fluides pour illustrer le rythme urbain contemporain.",
+                visuals: [
+                    { type: 'image', url: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&q=80&w=1200" }
+                ]
+            }
+        ];
+
+        // --- Composant Vidéo Scroll Background Robuste ---
+        const VideoScrollBackground = ({ isVisible }) => {
+            const videoRef = useRef(null);
+            const { scrollYProgress } = useScroll();
+            
+            const smoothProgress = useSpring(scrollYProgress, { 
+                stiffness: 200, 
+                damping: 40,
+                restDelta: 0.001 
+            });
+            
+            const [status, setStatus] = useState('loading');
+
+            useMotionValueEvent(smoothProgress, "change", (v) => {
+                if (isVisible && videoRef.current && videoRef.current.duration && status === 'ready') {
+                    videoRef.current.currentTime = v * videoRef.current.duration;
+                }
+            });
+
+            useEffect(() => {
+                const video = videoRef.current;
+                if (!video) return;
+
+                const initVideo = () => {
+                    video.play().then(() => {
+                        video.pause();
+                        setStatus('ready');
+                    }).catch(err => {
+                        setStatus('ready');
+                    });
+                };
+
+                video.addEventListener('loadedmetadata', initVideo);
+                video.addEventListener('error', () => setStatus('error'));
+
+                return () => {
+                    video.removeEventListener('loadedmetadata', initVideo);
+                };
+            }, []);
+
+            return (
+                <div className={`fixed inset-0 z-0 bg-black pointer-events-none overflow-hidden transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-30'}`}>
+                    <div className="absolute inset-0 bg-black/50 z-10" />
+                    <video
+                        ref={videoRef}
+                        muted
+                        playsInline
+                        preload="auto"
+                        className={`w-full h-full object-cover transition-opacity duration-1000 ${status === 'ready' ? 'opacity-80' : 'opacity-0'}`}
+                        style={{ filter: 'contrast(1.1) brightness(0.8)', transform: 'scale(0.8)' }}
+                    >
+                        <source src="https://wjjb8vn2j05qchai.public.blob.vercel-storage.com/3D_Drone_Animation_gzR_53Lh.mp4" type="video/mp4" />
+                    </video>
+                    {status === 'loading' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black">
+                            <Loader2 className="w-10 h-10 mb-4" />
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const CustomCursor = () => {
+            const [position, setPosition] = useState({ x: 0, y: 0 });
+            useEffect(() => {
+                const updatePosition = (e) => setPosition({ x: e.clientX, y: e.clientY });
+                window.addEventListener('mousemove', updatePosition);
+                return () => window.removeEventListener('mousemove', updatePosition);
+            }, []);
+            return (
+                <motion.div 
+                    className="fixed top-0 left-0 w-8 h-8 border border-cyan-400 z-[9999] pointer-events-none hidden lg:flex items-center justify-center"
+                    animate={{ x: position.x - 16, y: position.y - 16 }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 300, mass: 0.5 }}
+                >
+                    <div className="w-1 h-1 bg-blue-500 rounded-full shadow-[0_0_12px_#3b82f6]" />
+                </motion.div>
+            );
+        };
+
+        // --- COMPOSANT : PAGE DÉTAILLÉE DU PROJET ---
+        const ProjectPage = ({ project, onBack }) => {
+            useEffect(() => {
+                window.scrollTo(0, 0);
+            }, []);
+
+            return (
+                <motion.div 
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -50 }}
+                    className="relative z-[200] min-h-screen bg-black/95 backdrop-blur-xl px-6 md:px-20 pt-32 pb-40"
+                >
+                    <button 
+                        onClick={onBack}
+                        className="flex items-center gap-3 text-gray-500 hover:text-white transition-colors mb-16 uppercase font-bold text-xs tracking-widest"
+                    >
+                        <ArrowLeft /> Retour au Portfolio
+                    </button>
+
+                    <div className="max-w-6xl mx-auto">
+                        <header className="mb-24">
+                            <span className="text-cyan-400 font-mono text-xs uppercase tracking-[0.5em] mb-4 block">{project.client}</span>
+                            <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter italic mb-8 underline decoration-white/10">{project.title}</h1>
+                            <p className="text-gray-400 text-lg md:text-xl max-w-3xl leading-relaxed italic font-light">
+                                {project.description}
+                            </p>
+                        </header>
+
+                        <div className="grid grid-cols-1 gap-12 md:gap-24">
+                            {project.visuals.map((visual, idx) => (
+                                <motion.div 
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    className="w-full rounded-sm overflow-hidden border border-white/5 shadow-2xl bg-zinc-900"
+                                >
+                                    {visual.type === 'image' ? (
+                                        <img src={visual.url} className="w-full h-auto" alt={`Work ${idx}`} />
+                                    ) : (
+                                        <video controls className="w-full aspect-video bg-black">
+                                            <source src={visual.url} type="video/mp4" />
+                                        </video>
+                                    )}
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.div>
+            );
+        };
+
+        // --- APP PRINCIPALE ---
+        function App() {
+            const [selectedProject, setSelectedProject] = useState(null);
+            const { scrollYProgress } = useScroll();
+            const scaleProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
+
+            return (
+                <div className="bg-black text-white min-h-screen font-sans selection:bg-cyan-500 selection:text-black overflow-x-hidden">
+                    <CustomCursor />
+                    <VideoScrollBackground isVisible={!selectedProject} />
+
+                    <AnimatePresence mode="wait">
+                        {!selectedProject ? (
+                            <motion.div 
+                                key="main-content"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                            >
+                                <motion.div 
+                                    className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 z-[100] origin-left shadow-[0_0_15px_rgba(34,211,238,0.4)]"
+                                    style={{ scaleX: scaleProgress }}
+                                />
+
+                                <nav className="fixed top-0 w-full z-[60] px-8 py-6 flex justify-between items-center backdrop-blur-md bg-black/30 border-b border-white/5">
+                                    <a href="#vision" className="text-2xl font-black tracking-tighter uppercase">
+                                        LANCELOT<span className="text-cyan-400 ml-1">Cavalec</span>
+                                    </a>
+                                    <div className="hidden md:flex gap-10 text-[11px] font-bold uppercase tracking-[0.3em] text-gray-400">
+                                       {['Vision', 'Showreel', 'Projets', 'Contact'].map(item => (
+                                         <a key={item} href={`#${item.toLowerCase()}`} className="hover:text-white transition-colors uppercase">{item}</a>
+                                       ))}
+                                    </div>
+                                </nav>
+
+                                {/* Hero */}
+                                <section id="vision" className="relative min-h-screen flex flex-col items-center justify-center pt-40 pb-24 bg-transparent text-center px-4">
+                                    <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+                                        <h1 className="text-6xl md:text-8xl lg:text-[10rem] font-black mb-10 tracking-tighter uppercase leading-[0.85] bg-clip-text text-transparent bg-gradient-to-t from-blue-700 via-blue-500 to-cyan-400">
+                                            <span className="flex flex-col sm:flex-row gap-x-6 items-center justify-center">
+                                                <span>PUSH</span><span>THE</span>
+                                            </span>
+                                            <span className="italic">LIMITS</span>
+                                        </h1>
+                                        <p className="max-w-2xl mx-auto text-gray-300 text-lg md:text-xl mb-14 font-light leading-relaxed italic">
+                                            L'excellence visuelle au service de l'émotion. <br /> Des plans impossibles, une maîtrise technique absolue.
+                                        </p>
+                                        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                                            <a href="#showreel" className="px-14 py-5 border border-cyan-400 text-cyan-400 font-black uppercase tracking-widest text-xs flex items-center gap-3 cursor-pointer hover:bg-cyan-400 hover:text-black transition-all">
+                                                <PlayCircle size={16} /> Lancer le Showreel
+                                            </a>
+                                            <a href="#contact" className="px-14 py-5 border border-white/20 text-white font-black uppercase tracking-widest text-xs flex items-center gap-3 cursor-pointer hover:bg-white hover:text-black transition-all">
+                                                Me contacter
+                                            </a>
+                                        </div>
+                                    </motion.div>
+                                </section>
+
+                                {/* Showreel */}
+                                <section id="showreel" className="py-32 px-6 md:px-20 bg-black/40 backdrop-blur-md border-y border-white/5 relative z-10">
+                                    <div className="max-w-7xl mx-auto">
+                                        <div className="flex flex-col md:flex-row justify-between items-baseline mb-16 border-b border-white/10 pb-8">
+                                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter">SHOW<span className="text-blue-500 italic">REEL</span></h2>
+                                            <div className="text-gray-500 font-mono text-sm uppercase mt-4">Selection 2024 / 001</div>
+                                        </div>
+                                        <div className="group relative aspect-video w-full rounded-sm overflow-hidden border border-white/5 shadow-2xl bg-zinc-900 cursor-pointer">
+                                            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=1200" alt="Preview" className="w-full h-full object-cover opacity-50 transition-opacity group-hover:opacity-70" />
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-transparent transition-all">
+                                                <PlayCircle size={48} className="text-blue-500" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Projets */}
+                                <section id="projets" className="py-40 bg-black/40 px-6 md:px-20 border-t border-white/5 backdrop-blur-sm relative z-10">
+                                    <div className="max-w-7xl mx-auto mb-16 text-center md:text-left">
+                                        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter uppercase italic">PROJETS</h2>
+                                        <p className="text-gray-500 text-xs uppercase tracking-widest mt-2">Cliquez pour voir les livrables</p>
+                                    </div>
+                                    <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                                        {projectsData.map((project, i) => (
+                                            <div 
+                                                key={i} 
+                                                onClick={() => setSelectedProject(project)}
+                                                className="relative aspect-[4/5] group bg-black overflow-hidden border border-white/5 cursor-pointer rounded-sm"
+                                            >
+                                                <img src={project.img} alt={project.title} className="w-full h-full object-cover opacity-40 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-6 flex flex-col justify-end">
+                                                    <span className="text-cyan-400 font-mono text-[8px] uppercase tracking-widest mb-1 font-bold">{project.client}</span>
+                                                    <h4 className="text-xl font-black uppercase tracking-tighter leading-none italic">{project.title}</h4>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                {/* Contact */}
+                                <section id="contact" className="py-40 px-6 md:px-20 bg-zinc-950/80 backdrop-blur-lg relative z-10">
+                                    <div className="max-w-5xl mx-auto text-center px-6">
+                                       <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none mb-10 text-white uppercase italic">CRÉONS <br /> <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-400">L'IMAGE.</span></h2>
+                                       
+                                       {/* Formulaire de Contact avec le lien Formspree */}
+                                       <div className="max-w-xl mx-auto mt-20 text-left">
+                                           <form action="https://formspree.io/f/mreyqdnn" method="POST" className="space-y-12">
+                                               <div className="group">
+                                                   <label className="block text-gray-400 text-[11px] font-mono tracking-[0.4em] mb-2 uppercase">NOM COMPLET</label>
+                                                   <input name="nom" type="text" required className="w-full bg-transparent border-b border-white/10 py-3 text-white uppercase tracking-widest focus:outline-none focus:border-cyan-400 transition-colors" />
+                                               </div>
+                                               <div className="group">
+                                                   <label className="block text-gray-400 text-[11px] font-mono tracking-[0.4em] mb-2 uppercase">EMAIL DE CONTACT</label>
+                                                   <input name="email" type="email" required className="w-full bg-transparent border-b border-white/10 py-3 text-white uppercase tracking-widest focus:outline-none focus:border-cyan-400 transition-colors" />
+                                               </div>
+                                               <div className="group">
+                                                   <label className="block text-gray-400 text-[11px] font-mono tracking-[0.4em] mb-2 uppercase">DÉTAILS DU PROJET</label>
+                                                   <textarea name="message" rows="2" required className="w-full bg-transparent border-b border-white/10 py-3 text-white uppercase tracking-widest focus:outline-none focus:border-cyan-400 transition-colors resize-none"></textarea>
+                                               </div>
+                                               <button type="submit" className="w-full mt-8 py-6 border border-cyan-400 text-cyan-400 font-black uppercase tracking-[0.3em] text-xs hover:bg-cyan-400 hover:text-black transition-all">
+                                                   ENVOYER LE BRIEFING
+                                               </button>
+                                           </form>
+                                       </div>
+
+                                       <div className="flex justify-center gap-12 mt-24">
+                                          <a href="https://www.instagram.com/lancelot_production?igsh=Y2lub2p3eTRvcmRy&utm_source=qr$0" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-cyan-400 transition-colors cursor-pointer"><Instagram /></a>
+                                          <a href="https://youtube.com/@lancelotprod?si=C4DJEOcawbMe6wDR" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-red-500 transition-colors cursor-pointer"><Youtube /></a>
+                                          <a href="https://www.linkedin.com/in/lancelot-cavalec-45347119b?utm_source=share_via&utm_content=profile&utm_medium=member_ios$0" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-500 transition-colors cursor-pointer"><Linkedin /></a>
+                                       </div>
+                                       <p className="mt-24 text-[10px] font-mono text-gray-700 uppercase tracking-[0.5em]">
+                                          © 2024 — Lancelot Production / Lancelot Cavalec
+                                       </p>
+                                    </div>
+                                </section>
+                            </motion.div>
+                        ) : (
+                            <ProjectPage 
+                                key="project-view" 
+                                project={selectedProject} 
+                                onBack={() => setSelectedProject(null)} 
+                            />
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
